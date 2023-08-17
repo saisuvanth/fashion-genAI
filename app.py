@@ -1,55 +1,5 @@
-from diffusers import StableDiffusionXLPipeline,StableDiffusionXLInpaintPipeline,StableDiffusionXLImg2ImgPipeline
-import torch
-
-# pipe1 = StableDiffusionXLPipeline.from_pretrained(
-#     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True
-# )
-# pipe1.to("cuda")
-
-# pipe2 = StableDiffusionXLImg2ImgPipeline.from_pretrained(
-#     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True
-# )
-# pipe2.to("cuda")
-
-pipe3 = StableDiffusionXLInpaintPipeline.from_pretrained(
-    "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True
-)
-pipe3.to("cuda")
-
-# AWS credentials and region
-aws_access_key = 'AKIAVLCJWYVQJYFETG55'
-aws_secret_key = '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'
-
-region_name = 'ap-south-1'
-# S3 bucket information
-bucket_name = 'modelgpt-bucket'
-object_key = 'image'  # Change this to the desired object key
-
-import pinecone
-from fashion_clip.fashion_clip import FashionCLIP
-
-pinecone.init(api_key="db9e1fd0-3e59-4c64-bbb1-eaf98295bb0d", environment="asia-southeast1-gcp-free")
-index = pinecone.Index("myntra-image-index")
-
-fclip = FashionCLIP('fashion-clip')
-
-def pinecone_search(img_url):
-    import numpy as np
-    from PIL import Image
-    import requests
-    from io import BytesIO
-
-    response = requests.get(img_url)
-    print(response, img_url)
-    if response.status_code == 200:
-        image = Image.open(BytesIO(response.content))
-        image_embeddings = fclip.encode_images([image], batch_size=1)
-        image_embeddings = image_embeddings/np.linalg.norm(image_embeddings, ord=2, axis=-1, keepdims=True)
-        embed = np.ndarray.tolist(image_embeddings[0])
-        res = index.query(embed, top_k=20, include_metadata=True)
-        return res
-    else:
-        raise Exception("Failed to download image")
+from dotenv import load_dotenv
+load_dotenv()
 
 import boto3
 from fastapi import FastAPI
@@ -61,6 +11,7 @@ from diffusers.utils import load_image
 import uuid
 import base64
 from PIL import Image
+from setup import pinecone_search,pipe3
 
 app = FastAPI()
 
@@ -72,19 +23,22 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+
+object_key = 'image'
+
 def upload_to_s3(image):
     image_bytes = BytesIO()
     image.save(image_bytes, format='JPEG')  # Adjust the format if needed
     image_bytes = image_bytes.getvalue()
 
     # Create a Boto3 S3 client
-    s3_client = boto3.client('s3', aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key, region_name=region_name)
+    s3_client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'), region_name=os.getenv('AWS_BUCKET_REGION'))
 
     unique_filename = str(uuid.uuid4()) + '.jpeg'
 
     # Upload the image to S3 bucket
     response = s3_client.put_object(
-        Bucket=bucket_name,
+        Bucket=os.getenv('AWS_BUCKET_NAME'),
         Key=unique_filename,
         Body=BytesIO(image_bytes),
         ACL='private'  # Set the desired ACL, e.g., private, public-read, authenticated-read, etc.
