@@ -9,10 +9,13 @@ import {
   Text,
   Card,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { BiMale, BiFemale } from "react-icons/bi";
 import { AiOutlineSend } from "react-icons/ai";
 import PromptTextArea from "./PromptTextArea";
+import { concatUserInput } from "../../utils";
+import useApi from "../../hooks/useApi";
+import UserContext from "../../context/userContext";
 
 const pointer = {
   cursor: "pointer",
@@ -90,7 +93,7 @@ const clothesCategory = {
   },
 };
 
-const ChatArea = () => {
+const ChatArea = ({ onData, setIsLoading, getMaskedImage, image }) => {
   const [gender, setGender] = useState("male");
   const [upperBodyWearPrompt, setUpperBodyWearPrompt] = useState("");
   const [lowerBodyWearPrompt, setLowerBodyWearPrompt] = useState("");
@@ -101,6 +104,10 @@ const ChatArea = () => {
   const [selectedFullBodyWear, setSelectedFullBodyWear] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [selectedCustomPrompt, setSelectedCustomPrompt] = useState(false);
+  const [firstTime, setFirstTime] = useState(false);
+
+  const { getPromptWithMaskedImage } = useApi();
+  const context = useContext(UserContext)
 
   const handleUpperBodyWearPromptChange = (event) =>
     setUpperBodyWearPrompt(event.target.value);
@@ -109,6 +116,7 @@ const ChatArea = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    setIsLoading(true)
     const response = {
       gender: gender,
       fullBodyWear: {
@@ -132,6 +140,8 @@ const ChatArea = () => {
 
 
     console.log(response);
+    const prompt = concatUserInput(response);
+
 
     setLowerBodyWear("");
     setUpperBodyWear("");
@@ -142,6 +152,15 @@ const ChatArea = () => {
     setUpperBodyWearPrompt("");
     setCustomPrompt("");
     setSelectedCustomPrompt(false);
+    const maskedImage = getMaskedImage(!firstTime)
+    setFirstTime(false)
+    getPromptWithMaskedImage("64de2552259677eb0452530c", prompt, image, maskedImage)
+      .then(res => {
+        console.log(res)
+        onData(res.data.image)
+        setIsLoading(false)
+      })
+
   };
 
   const handleSelectUpperClothesCategory = (event) => {
@@ -182,9 +201,9 @@ const ChatArea = () => {
       border="0.0625rem solid #2d3748"
       padding="10px 10px 0px 10px"
       gap="3px"
-      height="98%"
-      width="30%"
-      maxHeight="98%"
+      height="99%"
+      width="25%"
+      maxHeight="99%"
       justifyContent={'space-around'}
     >
       <Flex

@@ -11,17 +11,45 @@ import {
   useBreakpointValue,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { PasswordField } from "./PasswordField";
 import CustomModal from "../../components/CustomModal";
 import UserContext from "../../context/userContext";
+import axios from "axios"
+import useApi from "../../hooks/useApi";
 
 export const SignIn = (props) => {
   const context = useContext(UserContext);
+  const { login, newChat } = useApi();
 
   const handleClose = () => {
     context.setSignIn(false);
   };
+
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const submitHandler = () => {
+    if (email.trim().length === 0) {
+      window.alert("Email cannot be empty")
+      return
+    }
+    if (password.trim().length === 0) {
+      window.alert("Password cannot be empty")
+      return
+    }
+    login(email, password).then(res => {
+      localStorage.setItem("token", res.data.token)
+      handleClose()
+      window.alert("Login Successfull")
+      context.setUser({ isLoggedIn: true, user: { userId: res.data.userId } })
+
+    }).catch(e => {
+      console.log(e)
+      window.alert(e.response.data.message)
+    })
+
+  }
 
   return (
     <CustomModal open={context.signIn} size="lg" handleClose={handleClose} >
@@ -65,9 +93,11 @@ export const SignIn = (props) => {
             <Stack spacing="5">
               <FormControl>
                 <FormLabel htmlFor="email">Email</FormLabel>
-                <Input id="email" type="email" border="1px solid #ccc" />
+                <Input id="email" type="email" border="1px solid #ccc" value={email}
+                  onChange={e => setEmail(e.target.value)} />
               </FormControl>
-              <PasswordField title="Password" border="1px solid #ccc" />
+              <PasswordField title="Password" border="1px solid #ccc" value={password}
+                onChange={e => setPassword(e.target.value)} />
             </Stack>
 
             <Stack spacing="6">
@@ -80,6 +110,7 @@ export const SignIn = (props) => {
                 }}
                 color="black"
                 transition="all 0.3s ease-out"
+                onClick={submitHandler}
               >
                 Sign In
               </Button>

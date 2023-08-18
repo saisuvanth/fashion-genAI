@@ -4,6 +4,9 @@ import { useStyles } from "@chakra-ui/react";
 
 const Options = (props) => {
   const { options, magicEraser } = props;
+  const checkAction = (option) => {
+    return option.name === "Magic Eraser" ? magicEraser ? false : true : false;
+  }
 
   return (
     <Flex m="5px 0">
@@ -16,29 +19,31 @@ const Options = (props) => {
             direction="column"
             alignItems="center"
             key={index}
+            _hover={{
+              transform: checkAction(option) ? "scale(1.12)" : "",
+              transition: "all 0.2s ease-out",
+              color: checkAction(option) ? "teal" : "",
+              borderColor: checkAction(option) ? 'teal' : "",
+              cursor:
+                option.name !== "Magic Eraser"
+                  ? magicEraser
+                    ? "pointer"
+                    : "not-allowed"
+                  : "pointer",
+            }}
           >
             <Box
               borderRadius="50%"
               padding="8px"
-              transition="all 0.2s ease-out"
-              border="1px solid lightgrey"
-              _hover={{
-                background: "white",
-                transform: "scale(1.2)",
-                transition: "all 0.3s ease-out",
-                boxShadow: "0px 0px 16px 0px rgba(0, 0, 0, 0.2)",
-                cursor:
-                  option.name !== "Magic Eraser"
-                    ? magicEraser
-                      ? "pointer"
-                      : "not-allowed"
-                    : "pointer",
-              }}
+              border="1px solid #3c4a61"
+              backgroundColor={'inherit'}
+              borderColor={'inherit'}
+              color={'inherit'}
               onClick={option.onClick}
             >
               {option.icon}
             </Box>
-            <Box textAlign="center" color={magicEraser ? "black" : "grey"}>
+            <Box textAlign="center" fontSize={16}>
               {option.name}
             </Box>
           </Flex>
