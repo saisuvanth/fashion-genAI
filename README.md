@@ -8,7 +8,7 @@ The problem we are solving revolves around the difficulty people encounter while
 
 # **Demo**
 
-![dome](gifs/demo.gif)
+![dome](demo.gif)
 
 
 # **Process Flow:**
