@@ -1,11 +1,11 @@
 import axios from "axios";
-import { useContext } from "react";
+import {useContext} from "react";
 import UserContext from "../context/userContext";
 
 const useApi = () => {
-    const { } = useContext(UserContext);
+    const {} = useContext(UserContext);
 
-    const URL = 'http://13.233.157.55:8080'
+    const URL = 'http://3.110.51.142:8080'
 
     const postPrompt = () => {
 
@@ -28,6 +28,21 @@ const useApi = () => {
         })
     }
 
+    const signup = (name, email, password, confirmPassword) => {
+        return axios.post(`${URL}/auth/signup`, {
+            name, email, password, confirmPassword
+        })
+    };
+
+    const getUserData = () => {
+        return axios.get(`${URL}/data/user-data`, {}, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+    }
+
     const newChat = () => {
         return axios.get(`${URL}/data/new-chat`, {}, {
             headers: {
@@ -38,8 +53,7 @@ const useApi = () => {
     }
 
     const getPromptWithMaskedImage = (chatId, prompt, image, maskedImage) => {
-
-        return axios.post(`${URL}/model/promptWithMaskedImage`, { chatId, prompt, image, maskedImage }, {
+        return axios.post(`${URL}/model/promptWithMaskedImage`, {chatId, prompt, image, maskedImage}, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -47,7 +61,16 @@ const useApi = () => {
         })
     }
 
-    return { login, newChat, getProducts, getPromptWithMaskedImage }
+    const getRecommendation = (products,image,maskedImage) => {
+        return axios.post(`${URL}/model/recommendation`, {products,image,maskedImage}, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+    }
+
+    return {login, signup,newChat, getProducts, getPromptWithMaskedImage, getRecommendation, getUserData}
 }
 
 export default useApi;

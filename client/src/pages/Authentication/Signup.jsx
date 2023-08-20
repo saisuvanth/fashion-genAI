@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useContext, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {
     Alert,
@@ -19,10 +19,18 @@ import {
 
 import {Logo} from "../../components/Image/Logo";
 import {PasswordField} from "../../components/Input/PasswordField";
+import useApi from "../../hooks/useApi";
+import UserContext from "../../context/userContext";
 
 const Signup = () => {
     // useNavigate
     const navigate = useNavigate();
+
+    // useContext
+    const context = useContext(UserContext);
+
+    // useApi
+    const {signup} = useApi();
 
     const [nameInput, setNameInput] = useState("");
     const [emailInput, setEmailInput] = useState("");
@@ -49,6 +57,24 @@ const Signup = () => {
 
     const signUpOnSubmitHandler = async (event) => {
         event.preventDefault();
+        context.setIsAuthLoading(true);
+
+        try {
+            const res = await signup(nameInput, emailInput, passwordInput, confirmPasswordInput);
+
+            setSignUpError("");
+            setSignUpInfo("Signup successful");
+
+            context.setIsAuthLoading(false);
+        } catch (err) {
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                setSignUpError("Invalid name, email or password");
+                context.setIsAuthLoading(false);
+            } else {
+                setSignUpError("Something went wrong");
+                context.setIsAuthLoading(false);
+            }
+        }
     };
 
     const loginLinkHandler = () => {

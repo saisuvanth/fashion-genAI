@@ -1,15 +1,24 @@
-import React from "react";
-import { Outlet } from "react-router";
+import React, {useContext} from "react";
+import { Outlet, Navigate } from "react-router";
 
 import NavBar from "../Navigation/NavBar";
+import UserContext from "../../context/userContext";
+import Sidebar from "../Navigation/Sidebar";
 
 const HomeLayout = () => {
-  return (
-    <>
-      <NavBar />
-      <Outlet />l
-    </>
-  );
+    const context = useContext(UserContext);
+
+    if(context.isAuthLoading) {
+        return <></>;
+    }
+
+    return (context.isLoggedIn) ? (
+        <>
+            <Outlet/>
+        </>
+    ) : (
+        <Navigate to="/login"/>
+    );
 };
 
 export default HomeLayout;
