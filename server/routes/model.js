@@ -6,28 +6,6 @@ const isAuth = require("../middleware/is-auth");
 
 const router = express.Router();
 
-// POST /model/prompt
-router.post(
-  "/prompt",
-  [
-    body("chatId").trim().not().isEmpty().withMessage("Please enter a chatId"),
-    body("prompt").trim().not().isEmpty().withMessage("Please enter a prompt"),
-  ],
-  isAuth,
-  modelController.prompt
-);
-
-// POST /model/promptWithImage
-router.post(
-  "/promptWithImage",
-  [
-    body("prompt").trim().not().isEmpty().withMessage("Please enter a prompt"),
-    body("image").trim().not().isEmpty().withMessage("Please upload an image"),
-  ],
-  isAuth,
-  modelController.promptWithImage
-);
-
 // POST /model/promptWithMaskedImage
 router.post(
   "/promptWithMaskedImage",
@@ -50,5 +28,16 @@ router.post(
   isAuth,
   modelController.getSimilarProducts
 );
+
+router.post(
+  "/recommendation",
+  [
+    body("products").isArray().withMessage("Please add atleast one product"),
+    body("image").trim().not().isEmpty().withMessage("Please upload an image"),
+    body("maskedImage").trim().not().isEmpty().withMessage("Please upload an masked image"),
+  ],
+  isAuth,
+  modelController.recommendations
+)
 
 module.exports = router;

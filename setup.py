@@ -2,6 +2,7 @@ from diffusers import StableDiffusionXLPipeline,StableDiffusionXLInpaintPipeline
 import torch
 import pinecone
 from fashion_clip.fashion_clip import FashionCLIP
+import os
 
 # pipe1 = StableDiffusionXLPipeline.from_pretrained(
 #     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True
@@ -17,7 +18,6 @@ pipe3 = StableDiffusionXLInpaintPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, use_safetensors=True
 )
 pipe3.to("cuda")
-
 
 pinecone.init(api_key=os.getenv('PINECONE_API_KEY'), environment=os.getenv('PINECONE_REGION'))
 index = pinecone.Index("myntra-image-index")
