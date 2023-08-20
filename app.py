@@ -12,6 +12,16 @@ import uuid
 import base64
 from PIL import Image
 from setup import pinecone_search,pipe3
+import os
+import requests
+from transformers import BlipProcessor, BlipForConditionalGeneration, pipeline
+import torch
+
+processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to("cuda")
+
+checkpoint = "MBZUAI/LaMini-Flan-T5-783M"
+model_text = pipeline('text2text-generation', model = checkpoint)
 
 app = FastAPI()
 
@@ -74,6 +84,11 @@ class TextMaskedImageToImageRequestBody(BaseModel):
 class SimilarProductRequestBody(BaseModel):
   image: str
 
+class RecommendationRequestBody(BaseModel):
+  products: list
+  image: str
+  masked_image: str
+
 
 @app.post("/text-to-image")
 def text_to_image(textToImageRequestBody: TextToImageRequestBody):
@@ -113,6 +128,37 @@ def get_similar_products(similarProductRequestBody: SimilarProductRequestBody):
     metadata_list = [item['metadata'] for item in data['matches']]
 
     return {'products':metadata_list}
+
+@app.post("/recommendation")
+def recommendation(recommendationRequestBody:RecommendationRequestBody):
+    img_urls=recommendationRequestBody.products
+
+    raw_images=[]
+    for img_url in img_urls:
+        raw_images.insert(0,Image.open(requests.get(img_url, stream=True).raw).convert('RGB'))
+
+    captions=""
+
+    for raw_image in raw_images:
+        prompt = "wearing "
+        inputs = processor(raw_image, prompt, return_tensors="pt").to("cuda")
+        out = model.generate(**inputs)
+        captions+=processor.decode(out[0], skip_special_tokens=True)+" "
+
+    input_prompt = "Give me a outfit recommendations based on the following information : "+captions
+    generated_text = model_text(input_prompt, max_length=512, do_sample=True)[0]['generated_text']
+
+    masked_img_bytes = base64.b64decode(recommendationRequestBody.masked_image)
+    masked_img = Image.open(BytesIO(masked_img_bytes))
+
+    image = pipe3(prompt=generated_text, image=load_image(recommendationRequestBody.image).convert("RGB"),mask_image=masked_img, num_inference_steps=50, strength=0.80).images[0]
+
+    filename=upload_to_s3(image)
+
+    # Return the image in the HTTP response
+    return {'filename': filename}
+
+
 
 import nest_asyncio
 import uvicorn

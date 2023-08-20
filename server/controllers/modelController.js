@@ -209,3 +209,40 @@ exports.getSimilarProducts = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.recommendations = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("Enter non-empty product list, masked image and image");
+      error.statusCode = 403;
+      error.data = errors.array();
+      throw error;
+    }
+
+    let products = req.body.products;
+    const image = req.body.image;
+    const maskedImage = req.body.maskedImage;
+
+    products=products.filter(item => item !== "");
+
+    const response = await axios.post(
+      process.env.MODEL_API_URL + "/recommendation",
+      {
+        products: products,
+        image: image,
+        masked_image: maskedImage
+      }
+    );
+
+    res.status(200).json({
+      message: "Image generated successfully",
+      image: process.env.BACKEND_URL + "/image/" + response.data.filename,
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+}
